@@ -39,6 +39,12 @@ class Category extends FOBasePage {
 
   private readonly valueToSortBy: (sortBy: string) => string;
 
+  private readonly sideBlockCategories: string;
+
+  private readonly sideBlockCategoriesItem: string;
+
+  private readonly sideBlockCategory: (text: string) => string;
+
   private readonly subCategoriesList: string;
 
   private readonly subCategoriesItem: (title: string) => string;
@@ -77,6 +83,8 @@ class Category extends FOBasePage {
 
   private readonly searchFiltersDropdown: (facetType: string) => string;
 
+  private readonly closeOneFilter: (row: number) => string;
+
   private readonly searchFiltersSlider: string;
 
   private readonly searchFilterPriceValues: string;
@@ -112,6 +120,11 @@ class Category extends FOBasePage {
     this.sortByDiv = `${this.productsSection} div.sort-by-row`;
     this.sortByButton = `${this.sortByDiv} button.select-title`;
     this.valueToSortBy = (sortBy: string) => `${this.productListTop} .products-sort-order .dropdown-menu a[href*='${sortBy}']`;
+
+    // Categories SideBlock
+    this.sideBlockCategories = '.block-categories';
+    this.sideBlockCategoriesItem = `${this.sideBlockCategories} ul.category-sub-menu li`;
+    this.sideBlockCategory = (text: string) => `${this.sideBlockCategoriesItem} a:text("${text}")`;
 
     // SubCategories List
     this.subCategoriesList = '#subcategories ul.subcategories-list';
@@ -151,6 +164,7 @@ class Category extends FOBasePage {
     this.searchFilterPriceValues = '[id*=facet_label]';
     this.clearAllFiltersLink = '#_desktop_search_filters_clear_all button.js-search-filters-clear-all';
     this.activeSearchFilters = '#js-active-search-filters';
+    this.closeOneFilter = (row: number) => `#js-active-search-filters ul li:nth-child(${row}) a i`;
 
     // Wishlist
     this.wishlistModal = '.wishlist-add-to .wishlist-modal.show';
@@ -400,6 +414,40 @@ class Category extends FOBasePage {
     return null;
   }
 
+  ////////////////////////////
+  // Side Block : Categories
+  ////////////////////////////
+  /**
+   * Return if Side Block : Categories is visible
+   * @param page {Page} Browser tab
+   * @return {Promise<boolean>}
+   */
+  async hasBlockCategories(page: Page): Promise<boolean> {
+    return this.elementVisible(page, this.sideBlockCategories, 1000);
+  }
+
+  /**
+   * Return if the number of categories in side block
+   * @param page {Page} Browser tab
+   * @return {Promise<number>}
+   */
+  async getNumBlockCategories(page: Page): Promise<number> {
+    return page.locator(this.sideBlockCategoriesItem).count();
+  }
+
+  /**
+   * Click on the category in side block
+   * @param page {Page} Browser tab
+   * @param categoryName {string}
+   * @return {Promise<void>}
+   */
+  async clickBlockCategory(page: Page, categoryName: string): Promise<void> {
+    await this.clickAndWaitForURL(page, this.sideBlockCategory(categoryName));
+  }
+
+  /////////////////////////
+  // Side Block : Filters
+  /////////////////////////
   /**
    * Return if search filters are visible
    * @param page {Page} Browser tab
@@ -473,6 +521,25 @@ class Category extends FOBasePage {
   }
 
   /**
+   * Close filter
+   * @param page {Page} Browser tab
+   * @param row {number} Row of the filter
+   * @return {Promise<void>}
+   */
+  async closeFilter(page: Page, row: number): Promise<void> {
+    await page.locator(this.closeOneFilter(row)).click();
+  }
+
+  /**
+   * Is active filter not visible
+   * @param page {Page} Browser tab
+   * @return {Promise<boolean>}
+   */
+  async isActiveFilterNotVisible(page: Page): Promise<boolean> {
+    return this.elementNotVisible(page, this.activeSearchFilters, 2000);
+  }
+
+  /**
    * Get maximum price from slider
    * @param page {Page} Browser tab
    * @return {Promise<number>}
@@ -504,7 +571,7 @@ class Category extends FOBasePage {
    * @return {Promise<void>}
    */
   async filterByPrice(page: Page, minPrice: number, maxPrice: number, filterFrom: number, filterTo: number): Promise<void> {
-    const sliderTrack = await page.locator(this.searchFiltersSlider);
+    const sliderTrack = page.locator(this.searchFiltersSlider);
     const sliderOffsetWidth = await sliderTrack.evaluate((el) => el.getBoundingClientRect().width);
     const pxOneEuro = sliderOffsetWidth / (maxPrice - minPrice);
 
