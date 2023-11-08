@@ -45,6 +45,7 @@ use Product;
 use Symfony\Component\Translation\Exception\InvalidArgumentException;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Tools;
+use Validate;
 
 /**
  * @property string $availability_message
@@ -578,7 +579,7 @@ class ProductLazyArray extends AbstractLazyArray
      */
     public function getCombinationSpecificData()
     {
-        if (!isset($this->product['attributes']) || empty($this->product['attributes'])) {
+        if (!isset($this->product['attributes']) || !is_array($this->product['attributes']) || empty($this->product['attributes'])) {
             return null;
         }
 
@@ -934,7 +935,7 @@ class ProductLazyArray extends AbstractLazyArray
         }
 
         // If availability date already passed, we don't want to show it
-        if (isset($product['available_date'])) {
+        if (!empty($product['available_date']) && $product['available_date'] != '0000-00-00' && Validate::isDate($product['available_date'])) {
             $date = new DateTime($product['available_date']);
             if ($date < new DateTime()) {
                 $product['available_date'] = null;
